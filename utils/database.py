@@ -15,4 +15,4 @@ def get_connection():
 
 def get_cursor_dict():
     connection = get_connection()
-    return (connection, connection.cursor(cursor_factory=extras.DictCursor))
+    return (connection, connection.cursor(cursor_factory=extras.RealDictCursor))
