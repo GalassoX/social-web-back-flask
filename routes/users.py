@@ -82,15 +82,21 @@ def login():
 
 @users.get('/api/user/<username>')
 def get_by_username(username):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM users')
-    result = cursor.fetchall()
-
+    (conn, cursor) = get_cursor_dict()
+    cursor.execute(
+        'SELECT * FROM users WHERE username=%s',
+        (username, )
+    )
+    result = cursor.fetchone()
+    cursor.close()
     conn.close()
-    print(result)
-
-    return 'Usuario ' + username
+    
+    return jsonify({
+        'username': result['username'],
+        'description': result['description'],
+        'likes': result['likes'],
+        'create_at': result['create_at']
+    })
 
 
 @users.get('/api/user/<username>/posts')
