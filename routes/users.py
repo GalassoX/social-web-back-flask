@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from utils.bcrypt import hash_password, verify_password
 from utils.database import get_connection, get_cursor_dict
-from utils.jwt import generate_user_token
+from utils.jwt import generate_user_token, decode_token
 
 users = Blueprint('users', __name__)
 
@@ -31,7 +31,7 @@ def create_user():
         cursor.close()
         conn.close()
         token = generate_user_token(result['id'])
-        return jsonify({'token': token, 'message': 'account registered'})
+        return jsonify({'token': token, 'message': 'account registered'}), 201
 
     cursor.close()
     conn.close()
@@ -48,7 +48,7 @@ def create_user():
         if not email_used and result['email'] == email:
             errors.append('Email used')
 
-    return jsonify({'error': errors})
+    return jsonify({'error': errors}), 400
 
 
 @users.post('/api/login')
@@ -67,17 +67,17 @@ def login():
     if not result:
         cursor.close()
         conn.close()
-        return jsonify({'error': 'User not exists'})
+        return jsonify({'error': 'User not exists'}), 400
 
     if not verify_password(result['password'], password):
         cursor.close()
         conn.close()
-        return jsonify({'error': 'Incorrect password'})
+        return jsonify({'error': 'Incorrect password'}), 400
 
     cursor.close()
     conn.close()
     token = generate_user_token(result['id'])
-    return jsonify({'token': token, 'message': 'account logged'})
+    return jsonify({'token': token, 'message': 'account logged'}), 200
 
 
 @users.get('/api/user/<username>')
@@ -90,15 +90,30 @@ def get_by_username(username):
     result = cursor.fetchone()
     cursor.close()
     conn.close()
-    
+
     return jsonify({
         'username': result['username'],
         'description': result['description'],
         'likes': result['likes'],
         'create_at': result['create_at']
-    })
+    }), 200
 
 
 @users.get('/api/user/<username>/posts')
 def get_user_posts(username):
-    return f'Posts: {username}'
+    auth = request.headers.get('Authorization')
+    if auth == None:
+        return jsonify({'error': 'Unauthorized'}), 400
+    (conn, cur) = get_cursor_dict()
+
+    user_id = decode_token(auth)['id']
+
+    cur.execute(
+        'SELECT * FROM posts WHERE created_by=%s',
+        (user_id, )
+    )
+    result = cur.fetchall()
+
+    cur.close()
+    conn.close()
+    return jsonify(result), 200
