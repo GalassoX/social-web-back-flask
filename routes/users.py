@@ -53,9 +53,20 @@ def create_user():
 
 @users.post('/api/login')
 def login():
+    user_or_email: str = None
+    password: str = None
+
     data = request.get_json()
-    user_or_email = data['userOrEmail']
-    password = data['password']
+    if data:
+        if 'userOrEmail' in data:
+            user_or_email = data['userOrEmail']
+        if 'password' in data:
+            password = data['password']
+
+    if user_or_email == None:
+        return jsonify({'error': 'Invalid user'})
+    if password == None:
+        return jsonify({'error': 'Invalid password'})
 
     (conn, cursor) = get_cursor_dict()
     cursor.execute(
