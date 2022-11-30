@@ -53,8 +53,31 @@ def create_user():
 
 @users.post('/api/login')
 def login():
+    data = request.get_json()
+    user_or_email = data['userOrEmail']
+    password = data['password']
 
-    return 'Login'
+    (conn, cursor) = get_cursor_dict()
+    cursor.execute(
+        'SELECT * FROM users WHERE username=%s OR email=%s',
+        (user_or_email, user_or_email)
+    )
+    result = cursor.fetchone()
+
+    if not result:
+        cursor.close()
+        conn.close()
+        return jsonify({'error': 'User not exists'})
+
+    if not verify_password(result['password'], password):
+        cursor.close()
+        conn.close()
+        return jsonify({'error': 'Incorrect password'})
+
+    cursor.close()
+    conn.close()
+    token = generate_user_token(result['id'])
+    return jsonify({'token': token, 'message': 'account logged'})
 
 
 @users.get('/api/user/<username>')
