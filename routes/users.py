@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from utils.bcrypt import hash_password, verify_password
-from utils.database import get_connection
+from utils.database import get_connection, get_cursor_dict
+from utils.jwt import generate_user_token
 
 users = Blueprint('users', __name__)
 
@@ -12,8 +13,7 @@ def create_user():
     password = data['password']
     email = data['email']
 
-    conn = get_connection()
-    cursor = conn.cursor()
+    (conn, cursor) = get_cursor_dict()
     cursor.execute(
         'SELECT * FROM users WHERE username=%s OR email=%s',
         (username, email)
@@ -27,35 +27,34 @@ def create_user():
             (username, email, hash)
         )
         conn.commit()
-        results = cursor.fetchone()
-        print(results)
+        result = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        token = generate_user_token(result['id'])
+        return jsonify({'token': token, 'message': 'account registered'})
+
+    cursor.close()
+    conn.close()
 
     errors = []
+    user_used = True
+    email_used = False
     for result in results:
-        if email in result:
+        if user_used and email_used:
+            break
+
+        if not user_used and result['username'] == username:
+            errors.append('User used')
+        if not email_used and result['email'] == email:
             errors.append('Email used')
 
-        if username in result:
-            errors.append('User used')
-
-    return jsonify({"errors": errors})
+    return jsonify({'error': errors})
 
 
-@users.get('/api/login')
+@users.post('/api/login')
 def login():
-    data = request.get_json()
-    user_or_email = data['userOrEmail']
-    password = data['password']
 
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        'SELECT * FROM users WHERE username=%s OR email=%s',
-        (user_or_email)
-    )
-    results = cursor.fetchall()
-    if len(results) > 0:
-        return jsonify({"error": "User not exists"})
+    return 'Login'
 
 
 @users.get('/api/user/<username>')
