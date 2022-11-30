@@ -108,16 +108,26 @@ def get_user_posts(username):
     auth = request.headers.get('Authorization')
     if auth == None:
         return jsonify({'error': 'Unauthorized'}), 400
+
     (conn, cur) = get_cursor_dict()
 
-    user_id = decode_token(auth)['id']
+    cur.execute(
+        'SELECT * FROM users WHERE username=%s',
+        (username, )
+    )
+    result = cur.fetchone()
+    if result == None:
+        cur.close()
+        conn.close()
+        return jsonify({'error': 'User not exists'}), 400
 
+    user_id = result['id']
     cur.execute(
         'SELECT * FROM posts WHERE created_by=%s',
         (user_id, )
     )
-    result = cur.fetchall()
 
     cur.close()
     conn.close()
+
     return jsonify(result), 200
