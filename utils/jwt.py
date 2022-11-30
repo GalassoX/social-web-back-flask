@@ -10,4 +10,4 @@ def generate_user_token(id: int):
 
 
 def decode_token(token: str):
-    return decode(token, secret, algorithm="HS256")
+    return decode(token, secret, algorithms=["HS256"])
