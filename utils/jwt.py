@@ -7,3 +7,7 @@ secret = "g4l4$$0p3rr45"
 
 def generate_user_token(id: int):
     return encode({"id": id}, secret, algorithm="HS256")
+
+
+def decode_token(token: str):
+    return decode(token, secret, algorithm="HS256")
