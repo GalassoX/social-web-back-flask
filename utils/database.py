@@ -1,4 +1,4 @@
-from psycopg2 import connect, connection, extras
+from psycopg2 import connect, extras
 
 host = "localhost"
 port = 5432
@@ -15,4 +15,4 @@ def get_connection():
 
 def get_cursor_dict():
     connection = get_connection()
-    return connection.cursor(cursor_factory=extras.DictCursor)
+    return (connection, connection.cursor(cursor_factory=extras.DictCursor))
