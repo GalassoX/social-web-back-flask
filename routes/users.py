@@ -82,6 +82,10 @@ def login():
 
 @users.get('/api/user/<username>')
 def get_by_username(username):
+    auth = request.headers.get('Authorization')
+    if auth == None:
+        return jsonify({'error': 'Unauthorized'}), 400
+
     (conn, cursor) = get_cursor_dict()
     cursor.execute(
         'SELECT * FROM users WHERE username=%s',
