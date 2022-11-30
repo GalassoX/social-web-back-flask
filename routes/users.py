@@ -8,10 +8,31 @@ users = Blueprint('users', __name__)
 
 @users.post('/api/user')
 def create_user():
+    username: str = None
+    password: str = None
+    email: str = None
+
     data = request.get_json()
-    username = data['username']
-    password = data['password']
-    email = data['email']
+    if data:
+        if 'username' in data:
+            username = data['username']
+        if 'password' in data:
+            password = data['password']
+        if 'email' in data:
+            email = data['email']
+
+    if username == None or password == None or email == None:
+        return jsonify({'error': 'Invalid info sent'}), 400
+
+    errors = []
+    if len(username) <= 3:
+        errors.append('Invalid info sent')
+
+    if email.find('@') == -1:
+        errors.append('Invalid email')
+
+    if len(errors):
+        return jsonify({'error': errors}), 400
 
     (conn, cursor) = get_cursor_dict()
     cursor.execute(
@@ -36,7 +57,6 @@ def create_user():
     cursor.close()
     conn.close()
 
-    errors = []
     user_used = True
     email_used = False
     for result in results:
