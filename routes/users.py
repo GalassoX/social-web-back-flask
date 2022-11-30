@@ -57,7 +57,7 @@ def create_user():
     cursor.close()
     conn.close()
 
-    user_used = True
+    user_used = False
     email_used = False
     for result in results:
         if user_used and email_used:
