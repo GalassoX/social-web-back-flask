@@ -126,6 +126,7 @@ def get_user_posts(username):
         'SELECT * FROM posts WHERE created_by=%s',
         (user_id, )
     )
+    result = cur.fetchall()
 
     cur.close()
     conn.close()
